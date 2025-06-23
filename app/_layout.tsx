@@ -4,6 +4,7 @@ import { useFonts } from 'expo-font';
 import { SplashScreen, Stack } from 'expo-router';
 import { useEffect } from 'react';
 import { useColorScheme } from 'react-native';
+import { PaperProvider, MD3DarkTheme, MD3LightTheme, adaptNavigationTheme } from 'react-native-paper';
 
 export {
   // Catch any errors thrown by the Layout component.
@@ -44,13 +45,39 @@ export default function RootLayout() {
 
 function RootLayoutNav() {
   const colorScheme = useColorScheme();
+  const { LightTheme: NavigationLightTheme, DarkTheme: NavigationDarkTheme } = adaptNavigationTheme({
+    reactNavigationLight: DefaultTheme,
+    reactNavigationDark: DarkTheme,
+  });
+
+  const CombinedDefaultTheme = {
+    ...NavigationLightTheme,
+    ...MD3LightTheme,
+    colors: {
+      ...NavigationLightTheme.colors,
+      ...MD3LightTheme.colors,
+    },
+  };
+
+  const CombinedDarkTheme = {
+    ...NavigationDarkTheme,
+    ...MD3DarkTheme,
+    colors: {
+      ...NavigationDarkTheme.colors,
+      ...MD3DarkTheme.colors,
+    },
+  };
+
+  const theme = colorScheme === 'dark' ? CombinedDarkTheme : CombinedDefaultTheme;
 
   return (
-    <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-      <Stack>
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen name="modal" options={{ presentation: 'modal' }} />
-      </Stack>
-    </ThemeProvider>
+    <PaperProvider theme={theme}>
+      <ThemeProvider value={theme}>
+        <Stack>
+          <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+          <Stack.Screen name="modal" options={{ presentation: 'modal' }} />
+        </Stack>
+      </ThemeProvider>
+    </PaperProvider>
   );
 }
