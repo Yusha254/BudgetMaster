@@ -3,63 +3,77 @@
 import React, { useState } from 'react';
 import { StyleSheet } from 'react-native';
 import { Text, TextInput, View, Pressable } from './Themed';
+import { insertTransaction } from '../data/Database';
 
-export default function AddTransaction() {
+type Props = {
+  onAdd?: () => void; // ✅ optional refresh callback
+};
+
+export default function AddTransaction({ onAdd }: Props) {
   const [smsText, setSmsText] = useState('');
 
-  const handleParse = () => {
-    const message = smsText;
+  const handleParse = async () => {
+    try {
+      const message = smsText;
   
-    // Regex definitions
-    const transactionCodeRegex = /^([A-Z0-9]+)\s+Confirmed\./i;
-    const amountRegex = /Ksh([\d,]+\.\d{2})/i;
-    const costRegex = /Transaction cost,\s*Ksh([\d,]+\.\d{2})/i;
-    const dateTimeRegex = /on\s+(\d{1,2}\/\d{1,2}\/\d{2,4})\s+at\s+([\d:]+(?:\s*[APMapm]{2})?)/;
-    const incomeNameRegex = /from\s+([A-Z\s]+?)(?=\s*\d{10}| on)/i;
-    const expenseNameRegex = /(?:sent to|paid to)\s+([A-Z\s]+?)(?=\s*\d{10}|\.| on)/i;
+      const transactionCodeRegex = /^([A-Z0-9]+)\s+Confirmed\./i;
+      const amountRegex = /Ksh([\d,]+\.\d{2})/i;
+      const costRegex = /Transaction cost,\s*Ksh([\d,]+\.\d{2})/i;
+      const dateTimeRegex = /on\s+(\d{1,2}\/\d{1,2}\/\d{2,4})\s+at\s+([\d:]+(?:\s*[APMapm]{2})?)/;
+      const incomeNameRegex = /from\s+([A-Z\s]+?)(?=\s*\d{10}| on)/i;
+      const expenseNameRegex = /(?:sent to|paid to)\s+([A-Z\s]+?)(?=\s*\d{10}|\.| on)/i;
   
-    // Matching
-    const transactionCode = message.match(transactionCodeRegex)?.[1] || 'N/A';
-    const amount = message.match(amountRegex)?.[1] || 'N/A';
-    const transactionCost = message.match(costRegex)?.[1] || 'N/A';
-    const dateTimeMatch = message.match(dateTimeRegex);
-    const date = dateTimeMatch?.[1] || 'N/A';
-    const time = dateTimeMatch?.[2] || 'N/A';
+      const transactionCode = message.match(transactionCodeRegex)?.[1] || 'N/A';
+      const amount = parseFloat((message.match(amountRegex)?.[1] || '0').replace(/,/g, ''));
+      const transactionCost = parseFloat((message.match(costRegex)?.[1] || '0').replace(/,/g, ''));
+      const dateTimeMatch = message.match(dateTimeRegex);
+      const date = dateTimeMatch?.[1] || 'N/A';
+      const time = dateTimeMatch?.[2] || 'N/A';
   
-    let isIncome = null;
-    if (/you have received/i.test(message)) {
+      let isIncome = null;
+      if (/you have received/i.test(message)) {
         isIncome = true;
-    } else if (/sent to|paid to/i.test(message)) {
+      } else if (/sent to|paid to/i.test(message)) {
         isIncome = false;
-    } else {
-        isIncome = null;
-    }
-
-    const name =
-        isIncome === true
-        ? message.match(incomeNameRegex)?.[1]?.trim() || 'N/A'
-        : isIncome === false
-        ? message.match(expenseNameRegex)?.[1]?.trim() || 'N/A'
-        : 'N/A';
-
-  
-    // Log result
-    console.log('Parsed Transaction Details:');
-    console.log('Transaction Code:', transactionCode);
-    console.log('Amount:', amount);
-    console.log('Transaction Cost:', transactionCost);
-    console.log('Date:', date);
-    console.log('Time:', time);
-    if (isIncome === true) {
-        console.log('Type: Income');
-      } else if (isIncome === false) {
-        console.log('Type: Expense');
-      } else {
-        console.log('Type: Unknown');
       }
-      
-    console.log('Name:', name);
-    };
+  
+      const name =
+        isIncome === true
+          ? message.match(incomeNameRegex)?.[1]?.trim() || 'N/A'
+          : isIncome === false
+          ? message.match(expenseNameRegex)?.[1]?.trim() || 'N/A'
+          : 'N/A';
+  
+      // ✅ Log parsed values
+      console.log('Parsed Transaction Details:');
+      console.log('Transaction Code:', transactionCode);
+      console.log('Amount:', amount);
+      console.log('Transaction Cost:', transactionCost);
+      console.log('Date:', date);
+      console.log('Time:', time);
+      console.log('Type:', isIncome === true ? 'Income' : isIncome === false ? 'Expense' : 'Unknown');
+      console.log('Name:', name);
+  
+      // ✅ Insert into the database
+      await insertTransaction({
+        code: transactionCode,
+        amount,
+        cost: transactionCost,
+        date,
+        time,
+        isIncome: isIncome,
+        name,
+        category: '', // optional for now
+      });
+  
+      console.log('✅ Transaction inserted successfully');
+      setSmsText('');
+      onAdd?.(); // ✅ call the optional refresh callback if provided
+    } catch (error) {
+      console.error('❌ Failed to parse and insert transaction:', error);
+    }
+  };
+  
   
 
   return (

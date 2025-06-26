@@ -5,6 +5,10 @@ import { SplashScreen, Stack } from 'expo-router';
 import { useEffect } from 'react';
 import { useColorScheme } from 'react-native';
 import { PaperProvider, MD3DarkTheme, MD3LightTheme, adaptNavigationTheme } from 'react-native-paper';
+import { StatusBar } from 'expo-status-bar';
+import { initDatabase } from '../data/Database';
+import { TransactionProvider } from '../context/TransactionContext';
+import { DatabaseProvider } from '../context/DatabaseProvider';
 
 export {
   // Catch any errors thrown by the Layout component.
@@ -70,13 +74,33 @@ function RootLayoutNav() {
 
   const theme = colorScheme === 'dark' ? CombinedDarkTheme : CombinedDefaultTheme;
 
+    // ✅ Initialize DB when app starts
+    useEffect(() => {
+      const setupDb = async () => {
+        try {
+          await initDatabase();
+          console.log('✅ Database initialized');
+        } catch (err) {
+          console.error('❌ Database initialization failed:', err);
+        }
+      };
+  
+      setupDb();
+    }, []);
+  
+
   return (
     <PaperProvider theme={theme}>
       <ThemeProvider value={theme}>
-        <Stack>
-          <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-          <Stack.Screen name="modal" options={{ presentation: 'modal' }} />
-        </Stack>
+        <StatusBar style="auto" /> 
+        <DatabaseProvider>
+          <TransactionProvider>
+            <Stack>
+              <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+              <Stack.Screen name="modal" options={{ presentation: 'modal' }} />
+            </Stack>
+          </TransactionProvider>
+        </DatabaseProvider>
       </ThemeProvider>
     </PaperProvider>
   );

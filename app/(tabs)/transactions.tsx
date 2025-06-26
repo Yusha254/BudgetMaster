@@ -1,10 +1,9 @@
 import { StyleSheet } from 'react-native';
-
 import TransactionsFilterTabs from '../../components/TransactionsFilterTabs';
 import TransactionsSearchBar from '../../components/TransactionsSearchBar';
 import TransactionList from '../../components/TransactionList';
-import { View } from '../../components/Themed';
 import AddTransaction from '../../components/AddTransaction';
+import { View } from '../../components/Themed';
 
 
 export default function Transactions() {
@@ -12,13 +11,12 @@ export default function Transactions() {
     <View style={styles.container}>
       <TransactionsSearchBar />
       <TransactionsFilterTabs selected="Income" />
-      <AddTransaction />
-      <TransactionList />
+      <AddTransaction /> {/* context will refetch automatically */}
+      <TransactionList /> {/* will use context automatically */}
     </View>
-
-
   );
 }
+
 
 const styles = StyleSheet.create({
   container: {

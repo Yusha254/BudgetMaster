@@ -2,7 +2,6 @@ import React from 'react';
 import { StyleSheet, TouchableOpacity } from 'react-native';
 import { Text, View } from './Themed';
 import ThemedIcon from './Themed';
-import { Ionicons } from '@expo/vector-icons';
 
 export default function BudgetHeader() {
   const budgetAmount = 5200;

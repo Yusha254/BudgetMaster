@@ -30,6 +30,47 @@ export async function initDatabase() {
   `);
 }
 
+// Add this to data/database.ts
+export async function insertTransaction({
+  code,
+  amount,
+  cost,
+  date,
+  time,
+  isIncome,
+  name,
+  category = '',
+}: {
+  code: string;
+  amount: number;
+  cost: number;
+  date: string;
+  time: string;
+  isIncome: boolean | null;
+  name: string;
+  category?: string;
+}) {
+  const db = getDb();
+  await db.runAsync(
+    `
+    INSERT INTO transactions 
+    (code, amount, cost, date, time, isIncome, name, category)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+  `,
+    code,
+    amount,
+    cost,
+    date,
+    time,
+    isIncome,
+    name,
+    category
+  );
+
+  console.log('Transaction inserted successfully!');
+}
+
+
 export function getDb() {
   if (!db) throw new Error("Database not initialized");
   return db;

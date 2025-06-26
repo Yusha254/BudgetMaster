@@ -1,27 +1,15 @@
-// components/LatestTransactions.tsx
-
 import React from 'react';
 import { StyleSheet, TouchableOpacity } from 'react-native';
 import { Text, View } from './Themed';
-import TransactionCard from './TransactionCard';
-import { transactions } from '../data/Transactions';
+import TransactionList from './TransactionList'; // ✅ use shared component
 
 export default function LatestTransactionCard() {
-
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Latest Transactions</Text>
 
-      {transactions.slice(0, 4).map((tx) => (
-        <TransactionCard
-          key={tx.id}
-          name={tx.name}
-          datetime={tx.datetime}
-          amount={tx.amount}
-          isIncome={tx.isIncome}
-        />
-      ))}
-
+      <TransactionList limit={5} />
+      
       <TouchableOpacity style={styles.viewAllButton}>
         <Text style={styles.viewAllText}>View All</Text>
       </TouchableOpacity>
