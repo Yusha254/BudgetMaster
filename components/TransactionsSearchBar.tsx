@@ -3,13 +3,20 @@ import { StyleSheet } from 'react-native';
 import { View, TextInput,} from './Themed';
 import ThemedIcon from './Themed';
 
-export default function TransactionsSearchBar() {
+type Props = {
+  search: string;
+  onChange: (text: string) => void;
+};
+
+export default function TransactionsSearchBar({ search, onChange }: Props) {
   return (
     <View style={styles.container}>
       <ThemedIcon name="search" style={styles.icon} />
       <TextInput
+        placeholder="Search by name"
+        value={search}
+        onChangeText={onChange}
         style={styles.input}
-        placeholder="Search transactions..."
       />
     </View>
   );

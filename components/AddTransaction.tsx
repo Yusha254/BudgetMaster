@@ -4,6 +4,10 @@ import React, { useState } from 'react';
 import { StyleSheet } from 'react-native';
 import { Text, TextInput, View, Pressable } from './Themed';
 import { insertTransaction } from '../data/Database';
+import { useBudgetContext } from '../context/BudgetContext';
+import { useTransactionContext } from '../context/TransactionContext';
+import { convertToISO } from '../utils/DateUtils';
+import { updateSpentAmountForCurrentMonth } from '../data/BudgetUtils';
 
 type Props = {
   onAdd?: () => void; // ✅ optional refresh callback
@@ -11,6 +15,9 @@ type Props = {
 
 export default function AddTransaction({ onAdd }: Props) {
   const [smsText, setSmsText] = useState('');
+  const { refetch } = useTransactionContext();
+  const { refresh } = useBudgetContext();
+  
 
   const handleParse = async () => {
     try {
@@ -27,7 +34,8 @@ export default function AddTransaction({ onAdd }: Props) {
       const amount = parseFloat((message.match(amountRegex)?.[1] || '0').replace(/,/g, ''));
       const transactionCost = parseFloat((message.match(costRegex)?.[1] || '0').replace(/,/g, ''));
       const dateTimeMatch = message.match(dateTimeRegex);
-      const date = dateTimeMatch?.[1] || 'N/A';
+      const rawDate = dateTimeMatch?.[1] || 'N/A';
+      const date = convertToISO(rawDate) || 'N/A';
       const time = dateTimeMatch?.[2] || 'N/A';
   
       let isIncome = null;
@@ -65,7 +73,11 @@ export default function AddTransaction({ onAdd }: Props) {
         name,
         category: '', // optional for now
       });
-  
+      if (!isIncome) {
+        await updateSpentAmountForCurrentMonth();
+      }
+      await refresh(); // 👈 This updates the budget context
+      await refetch(); // 👈 This updates the transaction context
       console.log('✅ Transaction inserted successfully');
       setSmsText('');
       onAdd?.(); // ✅ call the optional refresh callback if provided

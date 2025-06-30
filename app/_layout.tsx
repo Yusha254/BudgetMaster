@@ -9,6 +9,7 @@ import { StatusBar } from 'expo-status-bar';
 import { initDatabase } from '../data/Database';
 import { TransactionProvider } from '../context/TransactionContext';
 import { DatabaseProvider } from '../context/DatabaseProvider';
+import { BudgetProvider } from '../context/BudgetContext';
 
 export {
   // Catch any errors thrown by the Layout component.
@@ -94,12 +95,14 @@ function RootLayoutNav() {
       <ThemeProvider value={theme}>
         <StatusBar style="auto" /> 
         <DatabaseProvider>
-          <TransactionProvider>
-            <Stack>
-              <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-              <Stack.Screen name="modal" options={{ presentation: 'modal' }} />
-            </Stack>
-          </TransactionProvider>
+          <BudgetProvider>
+            <TransactionProvider>
+              <Stack>
+                <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+                <Stack.Screen name="modal" options={{ presentation: 'modal' }} />
+              </Stack>
+            </TransactionProvider>
+          </BudgetProvider>
         </DatabaseProvider>
       </ThemeProvider>
     </PaperProvider>

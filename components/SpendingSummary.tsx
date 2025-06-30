@@ -1,29 +1,36 @@
+// components/SpendingSummary.tsx
 import React from 'react';
 import { StyleSheet } from 'react-native';
 import { Text, View } from './Themed';
+import { useBudgetContext } from '../context/BudgetContext';
 
 export default function SpendingSummary() {
-  const totalSpent = 2000;
-  const highestCategory = 'Food';
-  const savings = 1000;
+  const { budget } = useBudgetContext();
+
+  if (!budget) return null;
+
+  const totalSpent = budget.spentAmount;
+  const totalBudget = budget.totalAmount;
+  const savings = totalBudget - totalSpent;
+  const highestCategory = 'TBD'; // Placeholder – we'll calculate this next
 
   return (
     <View style={styles.container}>
       <Text style={styles.sectionTitle}>Total Spent</Text>
 
       <View style={styles.itemRow}>
-        <Text style={styles.label}>Total Spent:</Text>
+        <Text style={styles.label}>Spent:</Text>
         <Text style={styles.value}>Ksh {totalSpent}</Text>
+      </View>
+
+      <View style={styles.itemRow}>
+        <Text style={styles.label}>Remaining:</Text>
+        <Text style={styles.value}>Ksh {savings}</Text>
       </View>
 
       <View style={styles.itemRow}>
         <Text style={styles.label}>Highest Category:</Text>
         <Text style={styles.value}>{highestCategory}</Text>
-      </View>
-
-      <View style={styles.itemRow}>
-        <Text style={styles.label}>Savings:</Text>
-        <Text style={styles.value}>Ksh {savings}</Text>
       </View>
     </View>
   );

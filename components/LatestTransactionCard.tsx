@@ -1,16 +1,23 @@
 import React from 'react';
 import { StyleSheet, TouchableOpacity } from 'react-native';
 import { Text, View } from './Themed';
-import TransactionList from './TransactionList'; // ✅ use shared component
+import { useRouter } from 'expo-router';
+import TransactionList from './TransactionList';
 
 export default function LatestTransactionCard() {
+  const router = useRouter();
+
+  const handleViewAll = () => {
+    router.push('/(tabs)/transactions'); // 👈 Adjust path if different
+  };
+
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Latest Transactions</Text>
 
-      <TransactionList limit={5} />
-      
-      <TouchableOpacity style={styles.viewAllButton}>
+      <TransactionList limit={3} />
+
+      <TouchableOpacity style={styles.viewAllButton} onPress={handleViewAll}>
         <Text style={styles.viewAllText}>View All</Text>
       </TouchableOpacity>
     </View>
@@ -26,7 +33,7 @@ const styles = StyleSheet.create({
     fontSize: 24,
     fontWeight: '600',
     marginBottom: 12,
-    textAlign: 'center'
+    textAlign: 'center',
   },
   viewAllButton: {
     alignSelf: 'flex-end',

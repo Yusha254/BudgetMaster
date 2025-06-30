@@ -70,6 +70,41 @@ export async function insertTransaction({
   console.log('Transaction inserted successfully!');
 }
 
+export async function insertBudget(budget: {
+  month: string;
+  year: number;
+  totalAmount: number;
+  spentAmount: number;
+}) {
+  const db = getDb();
+  await db.runAsync(
+    `
+    INSERT INTO budgets (month, year, totalAmount, spentAmount)
+    VALUES (?, ?, ?, ?)
+  `,
+    [budget.month, budget.year, budget.totalAmount, budget.spentAmount]
+  );
+}
+
+export async function calculateMonthlySpending(): Promise<number> {
+  const db = getDb();
+
+  const now = new Date();
+  const month = now.getMonth() + 1;
+  const year = now.getFullYear();
+
+  const result = await db.getFirstAsync<{ total: number }>(
+    `
+    SELECT SUM(amount) as total
+    FROM transactions
+    WHERE isIncome = 0 AND strftime('%m', date) = ? AND strftime('%Y', date) = ?
+    `,
+    [month.toString().padStart(2, '0'), year.toString()]
+  );
+
+  return result?.total ?? 0;
+}
+
 
 export function getDb() {
   if (!db) throw new Error("Database not initialized");

@@ -9,20 +9,34 @@ type Props = {
     id: number;
     name: string;
     amount: number;
-    isIncome: boolean | null;
+    isIncome: boolean | number | null;
     date: string;
     time: string;
   }[];
   loading?: boolean;
   limit?: number;
+  filter?: 'All' | 'Income' | 'Expense';
+  search?: string;
 };
 
-export default function TransactionList({ transactions, loading, limit }: Props) {
+
+export default function TransactionList({ transactions, loading, limit, filter, search = '' }: Props) {
   const context = useTransactionContext();
   const data = transactions ?? context.transactions;
   const isLoading = loading ?? context.loading;
 
-  const visibleData = limit ? data.slice(0, limit) : data;
+  const filteredData = data.filter((tx) => {
+    if (filter === 'Income') return tx.isIncome === 1 || tx.isIncome === true;
+    if (filter === 'Expense') return tx.isIncome === 0 || tx.isIncome === false;
+    return tx.isIncome !== null;
+  });
+
+  const searched = filteredData.filter((tx) =>
+    tx.name.toLowerCase().includes(search.toLowerCase())
+  );
+
+  const visibleData = limit ? searched.slice(0, limit) : searched;
+
 
   if (isLoading) {
     return <Text style={styles.message}>Loading transactions...</Text>;
@@ -31,22 +45,21 @@ export default function TransactionList({ transactions, loading, limit }: Props)
   if (visibleData.length === 0) {
     return <Text style={styles.message}>No transactions available.</Text>;
   }
-
+  
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      {visibleData
-        .filter((tx) => tx.isIncome !== null)
-        .map((tx) => (
-          <TransactionCard
-            key={tx.id}
-            name={tx.name}
-            datetime={`${tx.date} • ${tx.time}`}
-            amount={tx.amount}
-            isIncome={!!tx.isIncome}
-          />
-        ))}
+      {visibleData.map((tx) => (
+        <TransactionCard
+          key={tx.id}
+          name={tx.name}
+          datetime={`${tx.date} • ${tx.time}`}
+          amount={tx.amount}
+          isIncome={!!tx.isIncome}
+        />
+      ))}
     </ScrollView>
   );
+  
 }
 
 const styles = StyleSheet.create({
