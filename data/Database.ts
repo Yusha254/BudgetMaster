@@ -1,6 +1,8 @@
 import * as SQLite from 'expo-sqlite';
+import { openDatabaseSync, SQLiteDatabase } from 'expo-sqlite';
+import { ParsedTransaction, ParsedFuliza } from '../utils/MpesaParser';
 
-let db: SQLite.SQLiteDatabase;
+let db: SQLiteDatabase | null = null;
 
 export async function initDatabase() {
   db = await SQLite.openDatabaseAsync('budgetmaster.db');
@@ -27,29 +29,28 @@ export async function initDatabase() {
       totalAmount REAL NOT NULL,
       spentAmount REAL NOT NULL
     );
+
+    CREATE TABLE IF NOT EXISTS categorization_rules (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      keyword TEXT NOT NULL,
+      category TEXT NOT NULL
+    );
+
+    CREATE TABLE IF NOT EXISTS debts (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      transactionCode TEXT,
+      amount REAL,
+      interest REAL,
+      totalAmount REAL,
+      dueDate TEXT,
+      createdAt TEXT
+);
+
   `);
 }
 
 // Add this to data/database.ts
-export async function insertTransaction({
-  code,
-  amount,
-  cost,
-  date,
-  time,
-  isIncome,
-  name,
-  category = '',
-}: {
-  code: string;
-  amount: number;
-  cost: number;
-  date: string;
-  time: string;
-  isIncome: boolean | null;
-  name: string;
-  category?: string;
-}) {
+export async function insertTransaction(transaction: ParsedTransaction) {
   const db = getDb();
   await db.runAsync(
     `
@@ -57,14 +58,14 @@ export async function insertTransaction({
     (code, amount, cost, date, time, isIncome, name, category)
     VALUES (?, ?, ?, ?, ?, ?, ?, ?)
   `,
-    code,
-    amount,
-    cost,
-    date,
-    time,
-    isIncome,
-    name,
-    category
+    transaction.code,
+    transaction.amount,
+    transaction.cost,
+    transaction.date,
+    transaction.time,
+    transaction.isIncome,
+    transaction.name,
+    transaction.category ?? ''
   );
 
   console.log('Transaction inserted successfully!');
@@ -86,6 +87,16 @@ export async function insertBudget(budget: {
   );
 }
 
+export async function insertDebt(debt: ParsedFuliza) {
+  const db = getDb();
+  await db.runAsync(
+    `INSERT INTO debts (transactionCode, totalAmount, interest, dueDate)
+     VALUES (?, ?, ?, ?)`,
+    [debt.transactionCode, debt.amount, debt.interest, debt.dueDate]
+  );
+}
+
+
 export async function calculateMonthlySpending(): Promise<number> {
   const db = getDb();
 
@@ -106,7 +117,10 @@ export async function calculateMonthlySpending(): Promise<number> {
 }
 
 
-export function getDb() {
-  if (!db) throw new Error("Database not initialized");
+export function getDb(): SQLiteDatabase {
+  if (!db) {
+    db = openDatabaseSync('budgetmaster.db'); // Correct method
+    console.log('✅ SQLite database opened');
+  }
   return db;
 }

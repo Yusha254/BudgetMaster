@@ -61,6 +61,15 @@ export default function TabLayout() {
           ),
         }}
       />
+      <Tabs.Screen
+        name="analysis"
+        options={{
+          title: 'Insights',
+          tabBarIcon: ({ color }) => (
+            <TabBarIcon name="pie-chart" color={color} />
+          ),
+        }}
+      />
     </Tabs>
   );
 }

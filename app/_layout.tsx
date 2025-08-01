@@ -10,6 +10,7 @@ import { initDatabase } from '../data/Database';
 import { TransactionProvider } from '../context/TransactionContext';
 import { DatabaseProvider } from '../context/DatabaseProvider';
 import { BudgetProvider } from '../context/BudgetContext';
+import { useSMSScanner } from '../hooks/UseSmsScanner';
 
 export {
   // Catch any errors thrown by the Layout component.
@@ -75,25 +76,36 @@ function RootLayoutNav() {
 
   const theme = colorScheme === 'dark' ? CombinedDarkTheme : CombinedDefaultTheme;
 
-    // ✅ Initialize DB when app starts
-    useEffect(() => {
-      const setupDb = async () => {
-        try {
-          await initDatabase();
-          console.log('✅ Database initialized');
-        } catch (err) {
-          console.error('❌ Database initialization failed:', err);
-        }
-      };
-  
-      setupDb();
-    }, []);
-  
+  // ✅ Initialize DB when app starts
+  useEffect(() => {
+    const setupDb = async () => {
+      try {
+        await initDatabase();
+        console.log('✅ Database initialized');
+      } catch (err) {
+        console.error('❌ Database initialization failed:', err);
+      }
+    };
+
+    setupDb();
+  }, []);
+
+  // ✅ Scan SMS messages automatically on app launch
+  const { scanned, error } = useSMSScanner(true);
+
+  useEffect(() => {
+    if (scanned) {
+      console.log('✅ SMS scan complete.');
+    }
+    if (error) {
+      console.error('❌ SMS scan error:', error);
+    }
+  }, [scanned, error]);
 
   return (
     <PaperProvider theme={theme}>
       <ThemeProvider value={theme}>
-        <StatusBar style="auto" /> 
+        <StatusBar style="auto" />
         <DatabaseProvider>
           <BudgetProvider>
             <TransactionProvider>
@@ -108,3 +120,4 @@ function RootLayoutNav() {
     </PaperProvider>
   );
 }
+

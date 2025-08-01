@@ -14,6 +14,11 @@ import {
 } from 'react-native';
 import Colors from '../constants/Colors';
 import { FontAwesome } from '@expo/vector-icons';
+import { LineChart, PieChart } from 'react-native-chart-kit';
+import { Dimensions } from 'react-native';
+import { Menu, Button } from 'react-native-paper';
+
+const screenWidth = Dimensions.get('window').width;
 
 interface ThemedIconProps {
   name: React.ComponentProps<typeof FontAwesome>['name'];
@@ -39,6 +44,22 @@ export type TextProps = ThemeProps & DefaultText['props'];
 export type ViewProps = ThemeProps & DefaultView['props'];
 export type ScrollViewProps = ThemeProps & DefaultScrollViewProps;
 export type TextInputProps = ThemeProps & DefaultTextInput['props'];
+
+export function useChartColors() {
+  const theme = useColorScheme() ?? 'light';
+
+  return {
+    primary: Colors[theme].chartPrimary,
+    secondary: Colors[theme].chartSecondary,
+    background: Colors[theme].chartBackground,
+    text: Colors[theme].chartText,
+    chartColors: [
+      '#4CAF50', '#FF9800', '#03A9F4', '#E91E63', '#9C27B0',
+      '#F44336', '#00BCD4', '#8BC34A', '#FFC107', '#9E9E9E',
+    ],
+  };
+}
+
 
 export function useThemeColor(
   props: { light?: string; dark?: string },
@@ -109,6 +130,65 @@ export default function ThemedIcon({ name, size = 18, style }: ThemedIconProps) 
   return <FontAwesome name={name} size={size} color={color} style={style} />;
 }
 
+export function ThemedLineChart({ data, bezier = true, ...props }: any) {
+  const { primary, background, text } = useChartColors();
+
+  return (
+    <LineChart
+      data={data}
+      width={screenWidth - 32}
+      height={220}
+      bezier={bezier}
+      withInnerLines={false}
+      withShadow={true}
+      withDots={false}
+      chartConfig={{
+        backgroundColor: background,
+        backgroundGradientFrom: background,
+        backgroundGradientTo: background,
+        decimalPlaces: 0,
+        color: () => primary,
+        labelColor: () => text,
+        style: {
+          borderRadius: 8,
+        },
+        propsForDots: {
+          r: '5',
+          strokeWidth: '2',
+          stroke: primary,
+        },
+      }}
+      {...props}
+    />
+  );
+}
+
+
+export function ThemedPieChart({ data, accessor = 'amount', ...props }: any) {
+  const { background, text } = useChartColors();
+
+  return (
+    <PieChart
+      data={data}
+      width={screenWidth - 32}
+      height={220}
+      chartConfig={{
+        backgroundColor: background,
+        backgroundGradientFrom: background,
+        backgroundGradientTo: background,
+        color: () => text,
+        labelColor: () => text,
+      }}
+      accessor={accessor}
+      backgroundColor="transparent"
+      paddingLeft="0"
+      absolute
+      {...props}
+    />
+  );
+}
+
+
 export function Pressable({
   style,
   isSelected,
@@ -141,5 +221,38 @@ export function Pressable({
         children
       )}
     </DefaultPressable>
+  );
+}
+
+export function ThemedMenu(props: React.ComponentProps<typeof Menu>) {
+  return <Menu {...props} />;
+}
+
+export function ThemedMenuItem(props: React.ComponentProps<typeof Menu.Item>) {
+  return <Menu.Item {...props} />;
+}
+
+export function ThemedButton(props: React.ComponentProps<typeof Button>) {
+  const borderColor = useThemeColor({}, 'tabIconDefault');
+  const textColor = useThemeColor({}, 'text');
+
+  return (
+    <Button
+      mode="outlined"
+      style={[
+        {
+          borderRadius: 8,
+          borderColor,
+          borderWidth: 1,
+        },
+        props.style,
+      ]}
+      labelStyle={{
+        textTransform: 'none',
+        fontWeight: '600',
+        color: textColor,
+      }}
+      {...props}
+    />
   );
 }

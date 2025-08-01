@@ -3,12 +3,15 @@
 import React, { useState } from 'react';
 import { StyleSheet } from 'react-native';
 import { Text, TextInput, View, Pressable } from './Themed';
-import { insertTransaction } from '../data/Database';
+import { insertTransaction, insertDebt } from '../data/Database';
 import { useBudgetContext } from '../context/BudgetContext';
 import { useTransactionContext } from '../context/TransactionContext';
 import { convertToISO } from '../utils/DateUtils';
-import { updateSpentAmountForCurrentMonth } from '../data/BudgetUtils';
-
+import { updateSpentAmountForCurrentMonth } from '../utils/BudgetUtils';
+import { categorizeTransaction } from '../utils/CategorizationUtils';
+import { formatName } from '../utils/StringUtils';
+import { parseMpesaMessage } from '../utils/MpesaParser';
+  
 type Props = {
   onAdd?: () => void; // ✅ optional refresh callback
 };
@@ -17,74 +20,36 @@ export default function AddTransaction({ onAdd }: Props) {
   const [smsText, setSmsText] = useState('');
   const { refetch } = useTransactionContext();
   const { refresh } = useBudgetContext();
-  
 
   const handleParse = async () => {
     try {
-      const message = smsText;
-  
-      const transactionCodeRegex = /^([A-Z0-9]+)\s+Confirmed\./i;
-      const amountRegex = /Ksh([\d,]+\.\d{2})/i;
-      const costRegex = /Transaction cost,\s*Ksh([\d,]+\.\d{2})/i;
-      const dateTimeRegex = /on\s+(\d{1,2}\/\d{1,2}\/\d{2,4})\s+at\s+([\d:]+(?:\s*[APMapm]{2})?)/;
-      const incomeNameRegex = /from\s+([A-Z\s]+?)(?=\s*\d{10}| on)/i;
-      const expenseNameRegex = /(?:sent to|paid to)\s+([A-Z\s]+?)(?=\s*\d{10}|\.| on)/i;
-  
-      const transactionCode = message.match(transactionCodeRegex)?.[1] || 'N/A';
-      const amount = parseFloat((message.match(amountRegex)?.[1] || '0').replace(/,/g, ''));
-      const transactionCost = parseFloat((message.match(costRegex)?.[1] || '0').replace(/,/g, ''));
-      const dateTimeMatch = message.match(dateTimeRegex);
-      const rawDate = dateTimeMatch?.[1] || 'N/A';
-      const date = convertToISO(rawDate) || 'N/A';
-      const time = dateTimeMatch?.[2] || 'N/A';
-  
-      let isIncome = null;
-      if (/you have received/i.test(message)) {
-        isIncome = true;
-      } else if (/sent to|paid to/i.test(message)) {
-        isIncome = false;
+      const parsed = await parseMpesaMessage(smsText);
+
+      if (!parsed) {
+        console.warn('Message format not recognized.');
+        return;
       }
-  
-      const name =
-        isIncome === true
-          ? message.match(incomeNameRegex)?.[1]?.trim() || 'N/A'
-          : isIncome === false
-          ? message.match(expenseNameRegex)?.[1]?.trim() || 'N/A'
-          : 'N/A';
-  
-      // ✅ Log parsed values
-      console.log('Parsed Transaction Details:');
-      console.log('Transaction Code:', transactionCode);
-      console.log('Amount:', amount);
-      console.log('Transaction Cost:', transactionCost);
-      console.log('Date:', date);
-      console.log('Time:', time);
-      console.log('Type:', isIncome === true ? 'Income' : isIncome === false ? 'Expense' : 'Unknown');
-      console.log('Name:', name);
-  
-      // ✅ Insert into the database
-      await insertTransaction({
-        code: transactionCode,
-        amount,
-        cost: transactionCost,
-        date,
-        time,
-        isIncome: isIncome,
-        name,
-        category: '', // optional for now
-      });
-      if (!isIncome) {
+
+      if (parsed.type === 'transaction') {
+        await insertTransaction(parsed);
+      if (!parsed.isIncome) {
         await updateSpentAmountForCurrentMonth();
       }
-      await refresh(); // 👈 This updates the budget context
-      await refetch(); // 👈 This updates the transaction context
+      await refresh();
+      await refetch();
       console.log('✅ Transaction inserted successfully');
-      setSmsText('');
-      onAdd?.(); // ✅ call the optional refresh callback if provided
-    } catch (error) {
-      console.error('❌ Failed to parse and insert transaction:', error);
+    } else if (parsed.type === 'fuliza') {
+      await insertDebt(parsed);
+      console.log('✅ Fuliza debt recorded successfully');
     }
-  };
+
+    setSmsText('');
+    onAdd?.();
+  } catch (error) {
+    console.error('❌ Failed to parse and insert:', error);
+  }
+};
+
   
   
 

@@ -1,18 +1,29 @@
-// components/SpendingSummary.tsx
 import React from 'react';
 import { StyleSheet } from 'react-native';
 import { Text, View } from './Themed';
 import { useBudgetContext } from '../context/BudgetContext';
+import { useTransactionContext } from '../context/TransactionContext';
+import { useCategories } from '../hooks/UseCategories';
 
 export default function SpendingSummary() {
   const { budget } = useBudgetContext();
+  const { transactions } = useTransactionContext();
+  const categoryData = useCategories({ isIncome: false });
 
   if (!budget) return null;
 
   const totalSpent = budget.spentAmount;
   const totalBudget = budget.totalAmount;
   const savings = totalBudget - totalSpent;
-  const highestCategory = 'TBD'; // Placeholder – we'll calculate this next
+
+  const highestCategory = categoryData.length > 0
+    ? categoryData.sort((a, b) => b.amount - a.amount)[0].name
+    : '—';
+
+  // ✅ Calculate total transaction cost (e.g., withdrawal charges, etc.)
+  const totalCosts = transactions
+    .filter(tx => !tx.isIncome)
+    .reduce((sum, tx) => sum + (tx.cost || 0), 0);
 
   return (
     <View style={styles.container}>
@@ -29,8 +40,13 @@ export default function SpendingSummary() {
       </View>
 
       <View style={styles.itemRow}>
-        <Text style={styles.label}>Highest Category:</Text>
+        <Text style={styles.label}>Highest Expense:</Text>
         <Text style={styles.value}>{highestCategory}</Text>
+      </View>
+
+      <View style={styles.itemRow}>
+        <Text style={styles.label}>Transaction Costs:</Text>
+        <Text style={styles.value}>Ksh {totalCosts}</Text>
       </View>
     </View>
   );

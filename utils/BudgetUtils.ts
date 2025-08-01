@@ -1,5 +1,5 @@
-import { getDb } from './Database';
-import { getCurrentMonth, getCurrentYear } from '../utils/DateUtils';
+import { getDb } from '../data/Database';
+import { getCurrentMonth, getCurrentYear } from './DateUtils';
 
 export async function updateSpentAmountForCurrentMonth() {
   const db = getDb();
