@@ -1,4 +1,4 @@
-// utils/mpesaParser.ts
+// utils/MpesaParser.ts
 import { categorizeTransaction } from './CategorizationUtils';
 import { formatName } from './StringUtils';
 import { convertToISO } from './DateUtils';
@@ -26,10 +26,21 @@ export type ParsedFuliza = {
 export type ParsedResult = ParsedTransaction | ParsedFuliza | null;
 
 export async function parseMpesaMessage(message: string): Promise<ParsedResult> {
-  if (/Fuliza M-PESA amount/i.test(message)) {
-    return parseFulizaMessage(message);
+  if (typeof message !== 'string') {
+    console.warn('⚠️ Message is not a string:', message);
+    return null;
   }
-  return await parseTransactionMessage(message);
+
+  try {
+    if (/Fuliza M-PESA amount/i.test(message)) {
+      return parseFulizaMessage(message);
+    }
+
+    return await parseTransactionMessage(message);
+  } catch (error) {
+    console.error('❌ Failed to parse M-PESA message:', error);
+    return null;
+  }
 }
 
 async function parseTransactionMessage(message: string): Promise<ParsedTransaction | null> {
@@ -92,7 +103,7 @@ function parseFulizaMessage(message: string): ParsedFuliza | null {
 
   return {
     type: 'fuliza',
-    transactionCode: transactionCode,
+    transactionCode,
     amount,
     interest,
     dueDate,

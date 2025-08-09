@@ -20,7 +20,10 @@ export async function requestSmsPermission(): Promise<boolean> {
 
 export async function fetchMpesaMessagesThisMonth(): Promise<string[]> {
   const granted = await requestSmsPermission();
-  if (!granted) return [];
+  if (!granted) {
+    console.warn('❌ SMS permission not granted.');
+    return [];
+  }
 
   const now = new Date();
   const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
@@ -30,21 +33,49 @@ export async function fetchMpesaMessagesThisMonth(): Promise<string[]> {
     SmsAndroid.list(
       JSON.stringify({
         box: 'inbox',
+        address: 'MPESA', // Sender filter
         minDate,
-        bodyRegex: '(?i)M-PESA',
         maxCount: 500,
       }),
       (fail: any) => {
-        console.error('Failed to read SMS:', fail);
+        console.error('❌ SMS scan failed:', fail);
         reject(fail);
       },
       (count: number, smsList: string) => {
         try {
-          const messages = JSON.parse(smsList) as { body: string }[];
-          const filtered = messages.map((m) => m.body);
+          console.log(`✅ SMS scan success. Count: ${count}`);
+
+          if (!smsList || typeof smsList !== 'string') {
+            console.warn('⚠️ smsList is empty or not a string');
+            resolve([]);
+            return;
+          }
+
+          const parsed = JSON.parse(smsList);
+
+          if (!Array.isArray(parsed)) {
+            console.warn('⚠️ Parsed SMS list is not an array:', parsed);
+            resolve([]);
+            return;
+          }
+
+          // Filter only valid MPESA messages with a body
+          const filtered = parsed
+            .filter(
+              (m) =>
+                m &&
+                typeof m.body === 'string' &&
+                m.body.trim().length > 0 &&
+                typeof m.address === 'string' &&
+                m.address.toUpperCase() === 'MPESA'
+            )
+            .map((m) => m.body);
+
+          console.log(`✅ Extracted ${filtered.length} clean M-PESA messages.`);
           resolve(filtered);
-        } catch (e) {
-          reject('Failed to parse SMS list');
+        } catch (error) {
+          console.error('❌ Failed to parse SMS list:', error);
+          reject(error);
         }
       }
     );
