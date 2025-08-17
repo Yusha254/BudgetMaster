@@ -1,6 +1,6 @@
 import React from 'react';
 import { StyleSheet } from 'react-native';
-import { Text, View } from './Themed';
+import { Text, View, useThemeColor } from './Themed';
 import { useBudgetContext } from '../context/BudgetContext';
 import { useTransactionContext } from '../context/TransactionContext';
 import { useCategories } from '../hooks/UseCategories';
@@ -9,6 +9,12 @@ export default function SpendingSummary() {
   const { budget } = useBudgetContext();
   const { transactions } = useTransactionContext();
   const categoryData = useCategories({ isIncome: false });
+  
+  const surface = useThemeColor({}, 'surface');
+  const shadow = useThemeColor({}, 'shadow');
+  const secondary = useThemeColor({}, 'secondary');
+  const accent = useThemeColor({}, 'accent');
+  const error = useThemeColor({}, 'error');
 
   if (!budget) return null;
 
@@ -18,35 +24,55 @@ export default function SpendingSummary() {
 
   const highestCategory = categoryData.length > 0
     ? categoryData.sort((a, b) => b.amount - a.amount)[0].name
-    : '—';
+    : 'No expenses yet';
 
-  // ✅ Calculate total transaction cost (e.g., withdrawal charges, etc.)
   const totalCosts = transactions
     .filter(tx => !tx.isIncome)
     .reduce((sum, tx) => sum + (tx.cost || 0), 0);
 
+  const summaryItems = [
+    {
+      label: 'Total Spent',
+      value: `Ksh ${totalSpent.toLocaleString()}`,
+      color: error,
+      icon: '📊',
+    },
+    {
+      label: 'Remaining',
+      value: `Ksh ${Math.abs(savings).toLocaleString()}`,
+      color: savings >= 0 ? secondary : error,
+      icon: savings >= 0 ? '💰' : '⚠️',
+    },
+    {
+      label: 'Top Category',
+      value: highestCategory,
+      color: accent,
+      icon: '🏆',
+    },
+    {
+      label: 'Transaction Fees',
+      value: `Ksh ${totalCosts.toLocaleString()}`,
+      color: '#6B7280',
+      icon: '💳',
+    },
+  ];
+
   return (
-    <View style={styles.container}>
-      <Text style={styles.sectionTitle}>Total Spent</Text>
-
-      <View style={styles.itemRow}>
-        <Text style={styles.label}>Spent:</Text>
-        <Text style={styles.value}>Ksh {totalSpent}</Text>
-      </View>
-
-      <View style={styles.itemRow}>
-        <Text style={styles.label}>Remaining:</Text>
-        <Text style={styles.value}>Ksh {savings}</Text>
-      </View>
-
-      <View style={styles.itemRow}>
-        <Text style={styles.label}>Highest Expense:</Text>
-        <Text style={styles.value}>{highestCategory}</Text>
-      </View>
-
-      <View style={styles.itemRow}>
-        <Text style={styles.label}>Transaction Costs:</Text>
-        <Text style={styles.value}>Ksh {totalCosts}</Text>
+    <View style={[styles.container, { backgroundColor: surface, shadowColor: shadow }]}>
+      <Text style={styles.title}>Spending Overview</Text>
+      
+      <View style={styles.grid}>
+        {summaryItems.map((item, index) => (
+          <View key={index} style={styles.summaryCard}>
+            <View style={styles.cardHeader}>
+              <Text style={styles.icon}>{item.icon}</Text>
+              <Text style={styles.label}>{item.label}</Text>
+            </View>
+            <Text style={[styles.value, { color: item.color }]} numberOfLines={1}>
+              {item.value}
+            </Text>
+          </View>
+        ))}
       </View>
     </View>
   );
@@ -54,28 +80,51 @@ export default function SpendingSummary() {
 
 const styles = StyleSheet.create({
   container: {
-    paddingVertical: 16,
-    paddingHorizontal: 20,
-    borderRadius: 8,
-    marginBottom: 16,
+    marginHorizontal: 16,
+    marginBottom: 24,
+    borderRadius: 20,
+    padding: 20,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 12,
+    elevation: 8,
   },
-  sectionTitle: {
-    fontSize: 24,
-    fontWeight: '600',
-    marginBottom: 12,
+  title: {
+    fontSize: 22,
+    fontWeight: '700',
+    marginBottom: 20,
     textAlign: 'center',
   },
-  itemRow: {
+  grid: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginVertical: 4,
+    flexWrap: 'wrap',
+    gap: 12,
+  },
+  summaryCard: {
+    flex: 1,
+    minWidth: '45%',
+    backgroundColor: '#F9FAFB',
+    borderRadius: 16,
+    padding: 16,
+    alignItems: 'center',
+  },
+  cardHeader: {
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  icon: {
+    fontSize: 24,
+    marginBottom: 4,
   },
   label: {
-    fontSize: 14,
+    fontSize: 12,
+    fontWeight: '600',
     opacity: 0.7,
+    textAlign: 'center',
   },
   value: {
-    fontSize: 14,
-    fontWeight: '600',
+    fontSize: 16,
+    fontWeight: '700',
+    textAlign: 'center',
   },
 });

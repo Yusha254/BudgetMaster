@@ -1,47 +1,62 @@
 import React from 'react';
 import { StyleSheet, TouchableOpacity } from 'react-native';
-import { Text, View } from './Themed';
+import { Text, View, useThemeColor } from './Themed';
 import { useRouter } from 'expo-router';
 import TransactionList from './TransactionList';
 
 export default function LatestTransactionCard() {
   const router = useRouter();
+  const surface = useThemeColor({}, 'surface');
+  const primary = useThemeColor({}, 'primary');
+  const shadow = useThemeColor({}, 'shadow');
 
   const handleViewAll = () => {
-    router.push('/(tabs)/transactions'); // 👈 Adjust path if different
+    router.push('/(tabs)/transactions');
   };
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Latest Transactions</Text>
+    <View style={[styles.container, { backgroundColor: surface, shadowColor: shadow }]}>
+      <View style={styles.header}>
+        <Text style={styles.title}>Recent Transactions</Text>
+        <TouchableOpacity onPress={handleViewAll} style={styles.viewAllButton}>
+          <Text style={[styles.viewAllText, { color: primary }]}>View All</Text>
+        </TouchableOpacity>
+      </View>
 
       <TransactionList limit={3} />
-
-      <TouchableOpacity style={styles.viewAllButton} onPress={handleViewAll}>
-        <Text style={styles.viewAllText}>View All</Text>
-      </TouchableOpacity>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    padding: 16,
-    borderRadius: 8,
+    marginHorizontal: 16,
+    marginBottom: 24,
+    borderRadius: 20,
+    paddingTop: 20,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 12,
+    elevation: 8,
+  },
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    marginBottom: 12,
   },
   title: {
-    fontSize: 24,
-    fontWeight: '600',
-    marginBottom: 12,
-    textAlign: 'center',
+    fontSize: 22,
+    fontWeight: '700',
   },
   viewAllButton: {
-    alignSelf: 'flex-end',
-    marginTop: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 8,
   },
   viewAllText: {
     fontSize: 14,
-    fontWeight: '500',
-    color: '#2f95dc',
+    fontWeight: '600',
   },
 });

@@ -1,6 +1,6 @@
 import React from 'react';
 import { StyleSheet, Text } from 'react-native';
-import { ScrollView } from './Themed';
+import { ScrollView, View, useThemeColor } from './Themed';
 import TransactionCard from './TransactionCard';
 import { useTransactionContext } from '../context/TransactionContext';
 
@@ -12,6 +12,7 @@ type Props = {
     isIncome: boolean | number | null;
     date: string;
     time: string;
+    category?: string;
   }[];
   loading?: boolean;
   limit?: number;
@@ -19,11 +20,12 @@ type Props = {
   search?: string;
 };
 
-
 export default function TransactionList({ transactions, loading, limit, filter, search = '' }: Props) {
   const context = useTransactionContext();
   const data = transactions ?? context.transactions;
   const isLoading = loading ?? context.loading;
+  
+  const surface = useThemeColor({}, 'surface');
 
   const filteredData = data.filter((tx) => {
     if (filter === 'Income') return tx.isIncome === 1 || tx.isIncome === true;
@@ -37,13 +39,24 @@ export default function TransactionList({ transactions, loading, limit, filter, 
 
   const visibleData = limit ? searched.slice(0, limit) : searched;
 
-
   if (isLoading) {
-    return <Text style={styles.message}>Loading transactions...</Text>;
+    return (
+      <View style={styles.emptyContainer}>
+        <Text style={styles.loadingText}>📊 Loading transactions...</Text>
+      </View>
+    );
   }
 
   if (visibleData.length === 0) {
-    return <Text style={styles.message}>No transactions available.</Text>;
+    return (
+      <View style={styles.emptyContainer}>
+        <Text style={styles.emptyIcon}>💸</Text>
+        <Text style={styles.emptyTitle}>No transactions found</Text>
+        <Text style={styles.emptySubtitle}>
+          {search ? 'Try adjusting your search terms' : 'Your transactions will appear here'}
+        </Text>
+      </View>
+    );
   }
   
   return (
@@ -55,11 +68,11 @@ export default function TransactionList({ transactions, loading, limit, filter, 
           datetime={`${tx.date} • ${tx.time}`}
           amount={tx.amount}
           isIncome={!!tx.isIncome}
+          category={tx.category}
         />
       ))}
     </ScrollView>
   );
-  
 }
 
 const styles = StyleSheet.create({
@@ -68,12 +81,32 @@ const styles = StyleSheet.create({
   },
   content: {
     padding: 16,
-    gap: 4,
   },
-  message: {
-    padding: 20,
+  emptyContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 40,
+  },
+  emptyIcon: {
+    fontSize: 64,
+    marginBottom: 16,
+  },
+  emptyTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    marginBottom: 8,
     textAlign: 'center',
+  },
+  emptySubtitle: {
     fontSize: 16,
     opacity: 0.6,
+    textAlign: 'center',
+    lineHeight: 24,
+  },
+  loadingText: {
+    fontSize: 18,
+    fontWeight: '600',
+    textAlign: 'center',
   },
 });
